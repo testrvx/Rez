@@ -23,7 +23,7 @@ jobs:
         with:
           submodules: "recursive"
           fetch-depth: 0
-          ref: ci-test
+          ref: no-ksu-umount
 
       - name: Write key
         if: ${{ ( github.event_name != 'pull_request' && github.ref == 'refs/heads/master' ) || github.ref_type == 'tag' }}
