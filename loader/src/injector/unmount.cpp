@@ -58,6 +58,9 @@ void revert_unmount_ksu() {
         }
     }
 
+    // Always try to umount /system firstly
+    targets.push_back(KSU_PARTITIONS[0]);
+
     // Do unmount
     for (auto& s: reversed(targets)) {
         lazy_unmount(s.data());
