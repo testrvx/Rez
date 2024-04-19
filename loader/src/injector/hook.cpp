@@ -142,13 +142,11 @@ DCL_HOOK_FUNC(int, unshare, int flags) {
         // This is reproducible on the official AVD running API 26 and 27.
         // Simply avoid doing any unmounts for SysUI to avoid potential issues.
         (g_ctx->info_flags & PROCESS_IS_SYS_UI) == 0) {
-        if (g_ctx->flags[DO_REVERT_UNMOUNT]) {
-            if (g_ctx->info_flags & PROCESS_ROOT_IS_KSU) {
-                revert_unmount_ksu();
-            } else if (g_ctx->info_flags & PROCESS_ROOT_IS_MAGISK) {
-                revert_unmount_magisk();
-            }
-        }
+        // Always umount according to the KSU Profile
+        if ((g_ctx->info_flags & PROCESS_ON_DENYLIST) && (g_ctx->info_flags & PROCESS_ROOT_IS_KSU))
+            revert_unmount_ksu();
+        else if ((g_ctx->flags[DO_REVERT_UNMOUNT]) && (g_ctx->info_flags & PROCESS_ROOT_IS_MAGISK))
+            revert_unmount_magisk();
 
         /* Zygisksu changed: No umount app_process */
 
