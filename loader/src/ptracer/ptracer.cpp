@@ -16,6 +16,15 @@
 #include <string>
 #include "utils.hpp"
 
+void clearStackStringData(int pid, struct user_regs_struct& regs, const char *path) {
+    auto len = strlen(path) + 1;
+    char empty[len];
+    memset(empty, 0x1, len);
+    empty[len] = '\0';
+    regs.REG_SP += len;
+    push_string(pid, regs, empty);
+}
+
 bool inject_on_main(int pid, const char *lib_path) {
     LOGI("injecting %s to zygote %d", lib_path, pid);
     // parsing KernelArgumentBlock
@@ -45,6 +54,7 @@ bool inject_on_main(int pid, const char *lib_path) {
     auto v = auxv;
     void *entry_addr = nullptr;
     void *addr_of_entry_addr = nullptr;
+    // skip envp
     while (true) {
         ElfW(auxv_t) buf;
         read_proc(pid, (uintptr_t *) v, &buf, sizeof(buf));
@@ -99,6 +109,7 @@ bool inject_on_main(int pid, const char *lib_path) {
         args.push_back((long) RTLD_NOW);
         auto remote_handle = remote_call(pid, regs, (uintptr_t) dlopen_addr, (uintptr_t) libc_return_addr, args);
         LOGD("remote handle %p", (void *) remote_handle);
+        clearStackStringData(pid, regs, lib_path);
         if (remote_handle == 0) {
             LOGE("handle is null");
             // call dlerror
@@ -137,6 +148,7 @@ bool inject_on_main(int pid, const char *lib_path) {
         args.push_back((long) str);
         auto injector_entry = remote_call(pid, regs, (uintptr_t) dlsym_addr, (uintptr_t) libc_return_addr, args);
         LOGD("injector entry %p", (void*) injector_entry);
+        clearStackStringData(pid, regs, "entry");
         if (injector_entry == 0) {
             LOGE("injector entry is null");
             return false;
